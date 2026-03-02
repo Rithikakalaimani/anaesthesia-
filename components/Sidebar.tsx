@@ -57,14 +57,14 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="flex h-full w-[269px] shrink-0 flex-col overflow-hidden rounded-l-[59px] border-r-[1.5px] border-white"
+      className="flex h-full w-[269px] shrink-0 flex-col overflow-hidden rounded-[59px] border-[1.5px] border-white"
       style={{
         background: "rgba(245,245,245,0.23)",
         backdropFilter: "blur(11.2px)",
         WebkitBackdropFilter: "blur(11.2px)",
       }}
     >
-      <div className="flex flex-col border-b border-slate-200/80 px-5 py-5">
+      <div className="flex flex-col border-b border-white/30 px-10 py-5">
         <img
           src="/assets/Logo.png"
           alt="XO Labs Anaesthesia"
@@ -80,8 +80,8 @@ export default function Sidebar() {
               href={href}
               className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-[var(--header-bg)] text-slate-700"
-                  : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-800"
+                  ? "bg-white text-slate-800"
+                  : "text-slate-600 hover:bg-white/60 hover:text-slate-800"
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -90,11 +90,11 @@ export default function Sidebar() {
           );
         })}
       </div>
-      <div className="border-t border-slate-200/80 p-4">
+      <div className="border-t border-white/30 p-10">
         <button
           type="button"
           onClick={handleLogout}
-          className="w-full rounded-xl bg-slate-500 px-3 py-3 text-sm font-medium text-white transition-colors hover:bg-slate-600"
+          className="w-full rounded-xl bg-slate-600 px-2 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700"
         >
           LOG OUT
         </button>
