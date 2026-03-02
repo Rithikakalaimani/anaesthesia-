@@ -57,12 +57,11 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="flex h-full w-56 shrink-0 flex-col overflow-hidden rounded-l-3xl md:w-64"
+      className="flex h-full w-[269px] shrink-0 flex-col overflow-hidden rounded-l-[59px] border-r-[1.5px] border-white"
       style={{
-        background: "var(--glass-bg)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        borderRight: "1px solid var(--glass-border)",
+        background: "rgba(245,245,245,0.23)",
+        backdropFilter: "blur(11.2px)",
+        WebkitBackdropFilter: "blur(11.2px)",
       }}
     >
       <div className="flex flex-col border-b border-slate-200/80 px-5 py-5">
