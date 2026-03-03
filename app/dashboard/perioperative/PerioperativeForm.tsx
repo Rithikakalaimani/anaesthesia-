@@ -39,6 +39,78 @@ export default function PerioperativeForm({
   const [selectedPlot, setSelectedPlot] = useState<PlotMetric>("Heart Rate");
   const [chartPoints, setChartPoints] = useState<ChartPoint[]>([]);
 
+
+  // const [entries, setEntries] = useState([
+  //   {
+  //     time: "",
+  //     hr: "",
+  //     sys: "",
+  //     dia: "",
+  //     temp: "",
+  //     etco2: "",
+  //     spo2: "",
+  //   },
+  // ]);
+
+  // const handleAddEntry = () => {
+  //   setEntries([
+  //     ...entries,
+  //     {
+  //       time: "",
+  //       hr: "",
+  //       sys: "",
+  //       dia: "",
+  //       temp: "",
+  //       etco2: "",
+  //       spo2: "",
+  //     },
+  //   ]);
+  // };
+
+  type Entry = {
+    time: string;
+    hr: string;
+    sys: string;
+    dia: string;
+    temp: string;
+    etco2: string;
+    spo2: string;
+  };
+  const [entries, setEntries] = useState<Entry[]>([
+    {
+      time: "",
+      hr: "",
+      sys: "",
+      dia: "",
+      temp: "",
+      etco2: "",
+      spo2: "",
+    },
+  ]);
+  const handleAddEntry = () => {
+    setEntries((prev) => [
+      ...prev,
+      {
+        time: "",
+        hr: "",
+        sys: "",
+        dia: "",
+        temp: "",
+        etco2: "",
+        spo2: "",
+      },
+    ]);
+  };
+  
+  const fields: (keyof Entry)[] = [
+  "hr",
+  "sys",
+  "dia",
+  "temp",
+  "etco2",
+  "spo2",
+];
+
   useEffect(() => {
     setAnaesthesiaType(defaultAnaesthesiaType);
   }, [defaultAnaesthesiaType]);
@@ -647,165 +719,210 @@ const toggleMaintenanceAgent = (agent: string) => {
         </div>
       </div>
 
-      {/* 3. Immediate Pre Anaesthesia – full width */}
-      <section className='rounded-md border border-slate-200 bg-white p-5 shadow-sm'>
-        <h3 className='mb-4 text-sm font-semibold text-slate-800'>
-          Immediate Pre Anaesthesia
-        </h3>
-        <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
-          {[
-            { label: "Pulse Rate", unit: "bpm", placeholder: "78" },
-            { label: "BP", unit: "mmHg", placeholder: "120/80" },
-            { label: "Resp Rate", unit: "/min", placeholder: "16" },
-            { label: "Temp", unit: "C", placeholder: "36.5" },
-          ].map(({ label, unit, placeholder }) => (
-            <div key={label}>
-              <label className='mb-1 block text-xs font-medium uppercase text-slate-500'>
-                {label} <span className='text-emerald-600'>{unit}</span>
-              </label>
-              <input
-                type='text'
-                placeholder={placeholder}
-                className={inputBase}
-              />
+      {/* Immediate Pre Anaesthesia | Intra-Operative Monitoring Log – 2 columns, gap above */}
+      <div className='mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12'>
+        {/* Immediate Pre Anaesthesia */}
+        <section className='rounded-md border border-slate-200 bg-white p-5 shadow-sm lg:col-span-4'>
+          <h3 className='mb-4 text-sm font-semibold text-slate-800'>
+            Immediate Pre Anaesthesia
+          </h3>
+
+          {/* 2 Equal Columns */}
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+            {/* LEFT COLUMN */}
+            <div className='space-y-4'>
+              {/* Pulse Rate */}
+              <div>
+                <label className='block text-xs font-medium uppercase text-slate-500'>
+                  Pulse Rate <span className='text-emerald-600'>bpm</span>
+                </label>
+                <input type='text' placeholder='78' className={inputBase} />
+              </div>
+
+              {/* Resp Rate */}
+              <div>
+                <label className='block text-xs font-medium uppercase text-slate-500'>
+                  Resp Rate <span className='text-emerald-600'>/min</span>
+                </label>
+                <input type='text' placeholder='16' className={inputBase} />
+              </div>
+
+              {/* Temp */}
+              <div>
+                <label className='block text-xs font-medium uppercase text-slate-500'>
+                  Temp <span className='text-emerald-600'>°C</span>
+                </label>
+                <input type='text' placeholder='36.5' className={inputBase} />
+              </div>
+
+              {/* Time */}
+              <div>
+                <label className='block text-xs font-medium uppercase text-slate-500'>
+                  Time <span className='text-emerald-600'>min</span>
+                </label>
+                <input type='text' placeholder='10' className={inputBase} />
+              </div>
             </div>
-          ))}
-        </div>
-        <div className='mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3'>
-          {["Resp Rate MIN", "SpO2 %", "TDAP C", "Time MIN", "Others"].map(
-            (label) => (
-              <div key={label}>
-                <label className='mb-1 block text-xs font-medium uppercase text-slate-500'>
-                  {label}
+
+            {/* RIGHT COLUMN */}
+            <div className='space-y-4'>
+              {/* BP with 2 small inputs */}
+              <div>
+                <label className='block text-xs font-medium uppercase text-slate-500'>
+                  BP <span className='text-emerald-600'>mmHg</span>
+                </label>
+
+                <div className='flex items-center gap-2'>
+                  <input
+                    type='text'
+                    placeholder='120'
+                    className='w-full rounded-md border border-slate-300 px-2 py-1 text-sm text-center'
+                  />
+                  <span className='text-sm text-slate-500'>/</span>
+                  <input
+                    type='text'
+                    placeholder='80'
+                    className='w-full rounded-md border border-slate-300 px-2 py-1 text-sm text-center'
+                  />
+                </div>
+              </div>
+
+              {/* SpO2 */}
+              <div>
+                <label className='block text-xs font-medium uppercase text-slate-500'>
+                  SpO2 <span className='text-emerald-600'>%</span>
+                </label>
+                <input type='text' placeholder='98' className={inputBase} />
+              </div>
+
+              {/* Others */}
+              <div>
+                <label className='block text-xs font-medium uppercase text-slate-500'>
+                  Others
                 </label>
                 <input type='text' placeholder='-' className={inputBase} />
               </div>
-            ),
-          )}
-        </div>
-      </section>
+            </div>
+          </div>
+        </section>
 
-      {/* 4. Intra-Operative Monitoring Log – full width */}
-      <section className='rounded-xl border border-slate-200 bg-white p-5 shadow-sm'>
-        <div className='mb-4 flex items-center justify-between'>
-          <h3 className='text-base font-semibold text-slate-800'>
-            Intra-Operative Monitoring Log
-          </h3>
-          <button
-            type='button'
-            className='flex items-center gap-2 rounded-md bg-slate-700 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800'
-          >
-            <HiOutlinePlus className='h-4 w-4' />
-            Add Entry
-          </button>
-        </div>
-        <div className='overflow-x-auto'>
-          <table className='w-full border-collapse text-sm'>
-            <thead>
-              <tr className='bg-slate-700 text-white'>
-                <th className='px-4 py-3 text-left text-xs font-medium'>
-                  Time
-                </th>
-                <th className='px-4 py-3 text-center text-xs font-medium'>
-                  Heart Rate
-                </th>
-                <th className='px-4 py-3 text-center text-xs font-medium'>
-                  Systolic
-                </th>
-                <th className='px-4 py-3 text-center text-xs font-medium'>
-                  Diastolic
-                </th>
-                <th className='px-4 py-3 text-center text-xs font-medium'>
-                  Temp
-                </th>
-                <th className='px-4 py-3 text-center text-xs font-medium'>
-                  ETCO2
-                </th>
-                <th className='px-4 py-3 text-center text-xs font-medium'>
-                  SpO2
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className='border-b border-slate-100'>
-                <td className='px-4 py-3'>
-                  <input type='time' className={inputBase} />
-                </td>
-                <td className='px-4 py-3'>
-                  <input
-                    type='text'
-                    className='w-full rounded border border-slate-200 px-2 py-1 text-center text-sm'
-                  />
-                </td>
-                <td className='px-4 py-3'>
-                  <input
-                    type='text'
-                    className='w-full rounded border border-slate-200 px-2 py-1 text-center text-sm'
-                  />
-                </td>
-                <td className='px-4 py-3'>
-                  <input
-                    type='text'
-                    className='w-full rounded border border-slate-200 px-2 py-1 text-center text-sm'
-                  />
-                </td>
-                <td className='px-4 py-3'>
-                  <input
-                    type='text'
-                    className='w-full rounded border border-slate-200 px-2 py-1 text-center text-sm'
-                  />
-                </td>
-                <td className='px-4 py-3'>
-                  <input
-                    type='text'
-                    className='w-full rounded border border-slate-200 px-2 py-1 text-center text-sm'
-                  />
-                </td>
-                <td className='px-4 py-3'>
-                  <input
-                    type='text'
-                    className='w-full rounded border border-slate-200 px-2 py-1 text-center text-sm'
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div className='mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3'>
-          <div>
-            <label className='mb-1 block text-xs font-medium uppercase text-slate-500'>
-              Time of Extubation
-            </label>
-            <input type='text' className={inputBase} />
-          </div>
-          <div>
-            <label className='mb-1 block text-xs font-medium uppercase text-slate-500'>
-              Time completion of surgery
-            </label>
-            <input type='text' className={inputBase} />
-          </div>
-          <div className='flex items-end'>
+        {/* Intra-Operative Monitoring Log – same width as center + right columns */}
+        <section className='rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-8 flex flex-col'>
+          {/* HEADER */}
+          <div className='mb-4 flex items-center justify-between'>
+            <h3 className='text-base font-semibold text-slate-800'>
+              Intra-Operative Monitoring Log
+            </h3>
             <button
               type='button'
-              className='w-full rounded-md bg-red-500 py-3 text-sm font-bold text-white hover:bg-red-600'
+              onClick={handleAddEntry}
+              className='flex items-center gap-2 rounded-md bg-slate-700 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800'
             >
-              End Surgery
+              <HiOutlinePlus className='h-4 w-4' />
+              Add Entry
             </button>
           </div>
-        </div>
-      </section>
+
+          {/* SCROLLABLE TABLE AREA */}
+          <div className='flex-1 overflow-hidden'>
+            <div className='max-h-[260px] overflow-y-auto border border-slate-100 rounded-md'>
+              <table className='w-full table-fixed text-sm'>
+                <thead className='sticky top-0 bg-slate-700 text-white z-10'>
+                  <tr>
+                    <th className='px-3 py-3 text-left text-xs font-medium w-[14%]'>
+                      Time
+                    </th>
+                    <th className='px-3 py-3 text-center text-xs font-medium w-[14%]'>
+                      Heart Rate
+                    </th>
+                    <th className='px-3 py-3 text-center text-xs font-medium w-[14%]'>
+                      Systolic
+                    </th>
+                    <th className='px-3 py-3 text-center text-xs font-medium w-[14%]'>
+                      Diastolic
+                    </th>
+                    <th className='px-3 py-3 text-center text-xs font-medium w-[14%]'>
+                      Temp
+                    </th>
+                    <th className='px-3 py-3 text-center text-xs font-medium w-[15%]'>
+                      ETCO2
+                    </th>
+                    <th className='px-3 py-3 text-center text-xs font-medium w-[15%]'>
+                      SpO2
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {entries.map((entry, index) => (
+                    <tr key={index} className='border-b border-slate-100'>
+                      {/* Time */}
+                      <td className='px-3 py-3'>
+                        <input
+                          type='time'
+                          value={entry.time}
+                          onChange={(e) => {
+                            const updated = [...entries];
+                            updated[index].time = e.target.value;
+                            setEntries(updated);
+                          }}
+                          className='w-full bg-transparent text-sm outline-none'
+                        />
+                      </td>
+
+                      {/* Other Fields */}
+                      {fields.map((field) => (
+                        <td key={field} className='px-3 py-3'>
+                          <input
+                            type='text'
+                            value={entry[field]}
+                            onChange={(e) => {
+                              const updated = [...entries];
+                              updated[index][field] = e.target.value;
+                              setEntries(updated);
+                            }}
+                            className='w-full bg-transparent text-center text-sm outline-none'
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Bottom Section (unchanged) */}
+          <div className='mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3'>
+            <div>
+              <label className='mb-1 block text-xs font-medium uppercase text-slate-500'>
+                Time of Extubation
+              </label>
+              <input type='text' className={inputBase} />
+            </div>
+
+            <div>
+              <label className='mb-1 block text-xs font-medium uppercase text-slate-500'>
+                Time completion of surgery
+              </label>
+              <input type='text' className={inputBase} />
+            </div>
+
+            <div className='flex items-end'>
+              <button
+                type='button'
+                className='w-full rounded-md bg-red-500 py-3 text-sm font-bold text-white hover:bg-red-600'
+              >
+                End Surgery
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
     </>
   );
 }
 
-// function InfoRow({ label, value }: { label: string; value: string }) {
-//   return (
-//     <div className="flex gap-3">
-//       <span className="w-40 shrink-0 text-sm text-slate-600">{label}</span>
-//       <span className="text-sm font-medium text-slate-900">{value}</span>
-//     </div>
-//   );
-// }
 function InfoRow({
   label,
   value,
