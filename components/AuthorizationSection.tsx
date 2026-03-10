@@ -30,8 +30,16 @@ function SectionHeader({
 
 export default function AuthorizationSection({
   className = "",
+  anaesthesiologistName = "",
+  onAnaesthesiologistNameChange,
+  signed = "",
+  readOnly = false,
 }: {
   className?: string;
+  anaesthesiologistName?: string;
+  onAnaesthesiologistNameChange?: (value: string) => void;
+  signed?: string;
+  readOnly?: boolean;
 }) {
   return (
     <section className={`mb-6 mt-8 ${cardClass} ${className}`}>
@@ -45,7 +53,19 @@ export default function AuthorizationSection({
             Anaesthesiologist Name
           </label>
           <div className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-            Dr. 
+            {readOnly ? (
+              (anaesthesiologistName || "—")
+            ) : onAnaesthesiologistNameChange ? (
+              <input
+                type="text"
+                value={anaesthesiologistName}
+                onChange={(e) => onAnaesthesiologistNameChange(e.target.value)}
+                placeholder="Dr."
+                className="w-full bg-transparent focus:outline-none"
+              />
+            ) : (
+              "Dr."
+            )}
           </div>
         </div>
         <div>
@@ -53,10 +73,12 @@ export default function AuthorizationSection({
             Digital Signature
           </label>
           <div className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 flex items-center justify-between">
-            <span className="font-semibold tracking-wide">Dr.</span>
-            <span className="text-xs px-3 py-1 rounded-full bg-green-100 text-green-700 font-medium">
-              Signed
-            </span>
+            <span className="font-semibold tracking-wide">{signed || "Dr."}</span>
+            {signed ? (
+              <span className="text-xs px-3 py-1 rounded-full bg-green-100 text-green-700 font-medium">
+                Signed
+              </span>
+            ) : null}
           </div>
         </div>
         <div className="flex items-start gap-3 rounded-lg bg-amber-50 border border-amber-200 p-4 text-xs text-amber-800">

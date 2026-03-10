@@ -1,17 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  HiOutlineUser,
-  HiOutlinePlus,
-} from "react-icons/hi2";
+import { HiOutlineUser, HiOutlinePlus } from "react-icons/hi2";
 import { ANAESTHESIA_PLAN_OPTIONS } from "@/lib/anaesthesia";
 import PerioperativeChart, {
   PLOT_METRICS,
   type ChartPoint,
   type PlotMetric,
 } from "./PerioperativeChart";
-
 
 const SECTION_ICON_CLASS = "h-4 w-4 shrink-0 text-[var(--header-text)]";
 const cardClass =
@@ -28,7 +24,9 @@ export default function PerioperativeForm({
   defaultAnaesthesiaType,
   onAnaesthesiaTypeChange,
 }: PerioperativeFormProps) {
-  const [anaesthesiaType, setAnaesthesiaType] = useState<string>(defaultAnaesthesiaType);
+  const [anaesthesiaType, setAnaesthesiaType] = useState<string>(
+    defaultAnaesthesiaType,
+  );
   const [ventilationMode, setVentilationMode] = useState("Controlled");
   const [preOxygen, setPreOxygen] = useState("Yes");
   const [tourniquet, setTourniquet] = useState("Yes");
@@ -38,7 +36,6 @@ export default function PerioperativeForm({
   const [maintenanceAgents, setMaintenanceAgents] = useState<string[]>([]);
   const [selectedPlot, setSelectedPlot] = useState<PlotMetric>("Heart Rate");
   const [chartPoints, setChartPoints] = useState<ChartPoint[]>([]);
-
 
   // const [entries, setEntries] = useState([
   //   {
@@ -101,20 +98,12 @@ export default function PerioperativeForm({
       },
     ]);
   };
-  
-  const fields: (keyof Entry)[] = [
-  "hr",
-  "sys",
-  "dia",
-  "temp",
-  "etco2",
-  "spo2",
-];
+
+  const fields: (keyof Entry)[] = ["hr", "sys", "dia", "temp", "etco2", "spo2"];
 
   useEffect(() => {
     setAnaesthesiaType(defaultAnaesthesiaType);
   }, [defaultAnaesthesiaType]);
- 
 
   const handleAnaesthesiaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const v = e.target.value;
@@ -122,15 +111,19 @@ export default function PerioperativeForm({
     onAnaesthesiaTypeChange?.(v);
   };
 
-  const handleAddChartPoint = (time: string, value: number, metric: PlotMetric) => {
+  const handleAddChartPoint = (
+    time: string,
+    value: number,
+    metric: PlotMetric,
+  ) => {
     setChartPoints((prev) => [...prev, { time, value, metric }]);
   };
 
-const toggleMaintenanceAgent = (agent: string) => {
-  setMaintenanceAgents((prev) =>
-    prev.includes(agent) ? prev.filter((a) => a !== agent) : [...prev, agent],
-  );
-};
+  const toggleMaintenanceAgent = (agent: string) => {
+    setMaintenanceAgents((prev) =>
+      prev.includes(agent) ? prev.filter((a) => a !== agent) : [...prev, agent],
+    );
+  };
 
   type ToggleProps = {
     value: boolean;
@@ -182,7 +175,7 @@ const toggleMaintenanceAgent = (agent: string) => {
 
   return (
     <>
-      {/* 1. Patient Information – full width bar (Figma) */}
+      {/* 1. Patient Information */}
       <section className={`mb-6 ${cardClass}`}>
         <SectionHeader
           title='Patient Information'
@@ -201,9 +194,8 @@ const toggleMaintenanceAgent = (agent: string) => {
         </div>
       </section>
 
-      {/* 2. Three columns: compact equal height; left & right scrollable */}
+      {/* 2. Three columns*/}
       <div className='grid h-[420px] grid-cols-1 gap-6 lg:grid-cols-12 items-stretch'>
-        {/* Left column – scrollable */}
         <div className='flex min-h-0 flex-col gap-5 overflow-y-auto lg:col-span-4'>
           {/* Anaesthesia Type */}
           <section className='rounded-md border border-slate-200 bg-white p-3 shadow-sm'>
@@ -719,7 +711,7 @@ const toggleMaintenanceAgent = (agent: string) => {
         </div>
       </div>
 
-      {/* Immediate Pre Anaesthesia | Intra-Operative Monitoring Log – 2 columns, gap above */}
+      {/* Immediate Pre Anaesthesia | Intra-Operative Monitoring Log*/}
       <div className='mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12'>
         {/* Immediate Pre Anaesthesia */}
         <section className='rounded-md border border-slate-200 bg-white p-5 shadow-sm lg:col-span-4'>

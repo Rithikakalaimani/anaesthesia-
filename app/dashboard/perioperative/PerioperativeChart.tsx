@@ -22,7 +22,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
 );
 
 /** Time labels for X-axis (e.g. 00:00 to 04:00 in 15 min steps) */
@@ -79,7 +79,9 @@ export default function PerioperativeChart({
   onAddPoint,
   className = "",
 }: PerioperativeChartProps) {
-  const byMetric = PLOT_METRICS.reduce<Record<PlotMetric, { x: string; y: number }[]>>(
+  const byMetric = PLOT_METRICS.reduce<
+    Record<PlotMetric, { x: string; y: number }[]>
+  >(
     (acc, m) => {
       acc[m] = points
         .filter((p) => p.metric === m)
@@ -87,19 +89,21 @@ export default function PerioperativeChart({
         .sort((a, b) => TIME_LABELS.indexOf(a.x) - TIME_LABELS.indexOf(b.x));
       return acc;
     },
-    {} as Record<PlotMetric, { x: string; y: number }[]>
+    {} as Record<PlotMetric, { x: string; y: number }[]>,
   );
 
-  const datasets = PLOT_METRICS.filter((m) => byMetric[m].length > 0).map((metric) => ({
-    label: metric,
-    data: byMetric[metric],
-    borderColor: COLORS[metric],
-    backgroundColor: `${COLORS[metric]}20`,
-    fill: false,
-    tension: 0.2,
-    pointRadius: 4,
-    pointHoverRadius: 6,
-  }));
+  const datasets = PLOT_METRICS.filter((m) => byMetric[m].length > 0).map(
+    (metric) => ({
+      label: metric,
+      data: byMetric[metric],
+      borderColor: COLORS[metric],
+      backgroundColor: `${COLORS[metric]}20`,
+      fill: false,
+      tension: 0.2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+    }),
+  );
 
   const chartData = {
     labels: TIME_LABELS,
@@ -113,13 +117,19 @@ export default function PerioperativeChart({
       mode: "index" as const,
       intersect: false,
     },
-    onClick: (event: unknown, elements: { index?: number }[], chart?: Chart) => {
+    onClick: (
+      event: unknown,
+      elements: { index?: number }[],
+      chart?: Chart,
+    ) => {
       let index: number | null = null;
       if (elements.length > 0 && elements[0].index != null) {
         index = elements[0].index;
       } else if (chart?.canvas) {
         const rect = chart.canvas.getBoundingClientRect();
-        const ev = (event as { nativeEvent?: { clientX?: number }; clientX?: number })?.nativeEvent ?? (event as { clientX?: number });
+        const ev =
+          (event as { nativeEvent?: { clientX?: number }; clientX?: number })
+            ?.nativeEvent ?? (event as { clientX?: number });
         const clientX = (ev && "clientX" in ev ? ev.clientX : undefined) ?? 0;
         const x = clientX - rect.left;
         const xScale = chart.scales.x;

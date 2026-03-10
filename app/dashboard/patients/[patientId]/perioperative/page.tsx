@@ -11,13 +11,13 @@ export default function PatientPerioperativePage({
 }) {
   const { patientId } = use(params);
   return (
-    <div className="min-h-full p-6 md:p-8 lg:p-10">
+    <div className='min-h-full p-6 md:p-8 lg:p-10'>
       <PatientStageHeader
         patientId={patientId}
-        currentStage="perioperative"
-        patientName="Jennifer"
+        currentStage='perioperative'
+        patientName='Jennifer'
       />
-      <PerioperativeForm defaultAnaesthesiaType="General" />
+      <PerioperativeForm defaultAnaesthesiaType='General' />
     </div>
   );
 }
