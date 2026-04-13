@@ -12,12 +12,12 @@ import {
   ReferenceLine,
 } from "recharts";
 
-/** Colour palette aligned with pre-anaesthetic (slate / grayish-blue) */
+
 const COLORS = {
-  hr: "#475569",      // slate-600
-  nibp: "#64748b",    // slate-500
-  spo2: "#334155",    // slate-700
-  rr: "#94a3b8",      // slate-400
+  hr: "#475569",      
+  nibp: "#64748b",    
+  spo2: "#334155",    
+  rr: "#94a3b8",     
 } as const;
 
 export type VitalSignsDataPoint = {

@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
-import { Roboto_Slab } from "next/font/google";
+import { Inter, Raleway } from "next/font/google";
 import "./globals.css";
 
-const robotoSlab = Roboto_Slab({
-  variable: "--font-roboto-slab",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+});
+
+const raleway = Raleway({
+  variable: "--font-raleway",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -19,8 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={robotoSlab.variable}>
-      <body className="antialiased font-sans">
+    <html lang="en" className={`${inter.variable} ${raleway.variable}`}>
+      <body className={`${inter.className} antialiased font-sans`}>
         {children}
       </body>
     </html>

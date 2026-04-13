@@ -6,7 +6,7 @@
   /* Grayish-blue palette (like reference image) */
   --glass-bg: rgba(255, 255, 255, 0.72);
   --glass-border: rgba(148, 163, 184, 0.35);
-  --header-bg: rgba(203, 213, 225, 0.65);
+  --header-bg: #9FBAD8;
   --header-text: #475569;
   --accent-muted: #64748b;
   --card-shadow: 0 4px 24px -4px rgba(71, 85, 105, 0.08);
@@ -15,10 +15,108 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-roboto-slab), ui-sans-serif, system-ui, sans-serif;
+  /* Inter = default UI/body (--font-inter from next/font on <html>) */
+  --font-sans: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* Raleway via next/font variable --font-raleway on <html> */
+@utility font-raleway {
+  font-family: var(--font-raleway), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Base */
+.custom-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: #E1E7EF; /* full bar color */
+  border-radius: 999px;
+  outline: none;
+}
+
+/* Track (Chrome, Safari) */
+.custom-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  background: #E1E7EF;
+  border-radius: 999px;
+}
+
+/* Thumb (Chrome, Safari) */
+.custom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  width: 16px;
+  background: #4C739F;
+  border-radius: 50%;
+  margin-top: -5px; /* center thumb */
+  cursor: pointer;
+  border: none;
+}
+
+/* Track (Firefox) */
+.custom-slider::-moz-range-track {
+  height: 6px;
+  background: #E1E7EF;
+  border-radius: 999px;
+}
+
+/* Thumb (Firefox) */
+.custom-slider::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  background: #4C739F;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+/*
+ * Prescription modal: window.print() / Save as PDF — only #prescription-print-root.
+ * Body gets .prescription-print-isolate in handlePrint (before print); removed on afterprint.
+ * Also supports body:has(#prescription-print-root) if Print is invoked without the class.
+ */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: white !important;
+  }
+
+  body.prescription-print-isolate *,
+  body:has(#prescription-print-root) * {
+    visibility: hidden;
+  }
+
+  body.prescription-print-isolate #prescription-print-root,
+  body.prescription-print-isolate #prescription-print-root *,
+  body:has(#prescription-print-root) #prescription-print-root,
+  body:has(#prescription-print-root) #prescription-print-root * {
+    visibility: visible !important;
+  }
+
+  body.prescription-print-isolate #prescription-print-root,
+  body:has(#prescription-print-root) #prescription-print-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 100%;
+    z-index: 2147483647;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

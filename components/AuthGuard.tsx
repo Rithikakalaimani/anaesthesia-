@@ -2,8 +2,7 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
-
-const AUTH_KEY = "auth";
+import { parseSessionUser } from "@/lib/anaesthesiaAuth";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -11,8 +10,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const auth = sessionStorage.getItem(AUTH_KEY);
-    if (!auth && pathname?.startsWith("/dashboard")) {
+    if (!pathname?.startsWith("/dashboard")) return;
+    const user = parseSessionUser();
+    if (!user) {
       router.replace("/login");
     }
   }, [pathname, router]);

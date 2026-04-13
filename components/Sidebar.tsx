@@ -2,99 +2,101 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { clearSessionUser } from "@/lib/anaesthesiaAuth";
+import {
+  SidebarCalendarIcon,
+  SidebarHomeIcon,
+  SidebarPatientsIcon,
+  SidebarPrescriptionIcon,
+} from "@/components/SidebarNavIcons";
 
 const navItems = [
-  { href: "/dashboard", label: "Home", icon: HomeIcon },
-  { href: "/dashboard/patients", label: "Patients", icon: PatientsIcon },
-  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarIcon },
-  { href: "/dashboard/prescription", label: "Prescription", icon: PrescriptionIcon },
+  { href: "/dashboard", label: "Home", icon: SidebarHomeIcon },
+  { href: "/dashboard/patients", label: "Patients", icon: SidebarPatientsIcon },
+  { href: "/dashboard/calendar", label: "Calendar", icon: SidebarCalendarIcon },
+  {
+    href: "/dashboard/prescription",
+    label: "Prescription",
+    icon: SidebarPrescriptionIcon,
+  },
 ];
 
-function HomeIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className ?? "h-4 w-4"} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-    </svg>
-  );
-}
-
-function PatientsIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className ?? "h-4 w-4"} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-    </svg>
-  );
-}
-
-function CalendarIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className ?? "h-4 w-4"} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-    </svg>
-  );
-}
-
-function PrescriptionIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className ?? "h-4 w-4"} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.318H4.517c-1.718 0-2.299-2.086-1.067-3.318L5 14.5" />
-    </svg>
-  );
-}
-
-const AUTH_KEY = "auth";
-
-export default function Sidebar() {
+export default function Sidebar({ onClose }: { onClose?: () => void } = {}) {
   const pathname = usePathname();
   const router = useRouter();
 
   function handleLogout() {
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem(AUTH_KEY);
-    }
+    clearSessionUser();
     router.push("/login");
   }
 
   return (
     <aside
-      className="flex h-full w-[269px] shrink-0 flex-col overflow-hidden rounded-[59px] border-[1.5px] border-white"
+      className='font-raleway flex h-full w-[269px] lg:w-[200px] xl:w-[269px] shrink-0 flex-col overflow-hidden rounded-3xl lg:rounded-[40px] xl:rounded-[59px] border-[1.5px] border-white'
       style={{
         background: "rgba(245,245,245,0.23)",
         backdropFilter: "blur(11.2px)",
         WebkitBackdropFilter: "blur(11.2px)",
       }}
     >
-      <div className="flex flex-col border-b border-white/30 px-10 py-5">
+      <div className='flex items-center justify-between border-b border-white/30 px-10 py-5 lg:px-6 lg:py-4 xl:px-10 xl:py-5'>
         <img
-          src="/assets/Logo.png"
-          alt="XO Labs Anaesthesia"
-          className="h-20 w-auto object-contain object-left"
+          src='/assets/Logo.png'
+          alt='XO Labs Anaesthesia'
+          className='h-20 lg:h-14 xl:h-20 w-auto object-contain object-left'
         />
+        {/* Close button – only shown in mobile overlay */}
+        {onClose && (
+          <button
+            type='button'
+            onClick={onClose}
+            className='lg:hidden rounded-lg p-1.5 hover:bg-white/50 transition-colors'
+            aria-label='Close menu'
+          >
+            <svg
+              className='h-5 w-5 text-slate-600'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                d='M6 18 18 6M6 6l12 12'
+              />
+            </svg>
+          </button>
+        )}
       </div>
-      <div className="flex flex-1 flex-col gap-1 px-3 py-5">
+      <div className='flex flex-1 flex-col gap-1 px-3 py-5 lg:py-3 xl:py-5'>
         {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || (href === "/dashboard/patients" && pathname.startsWith("/dashboard/patients"));
+          const isActive =
+            pathname === href ||
+            (href === "/dashboard/patients" &&
+              pathname.startsWith("/dashboard/patients"));
           return (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors ${
+              onClick={onClose}
+              className={`flex items-center gap-3 rounded-xl px-3 py-3 lg:py-2.5 xl:py-3 text-sm font-semibold transition-colors ${
                 isActive
                   ? "bg-white text-slate-800"
                   : "text-slate-600 hover:bg-white/60 hover:text-slate-800"
               }`}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon className='shrink-0' />
               {label}
             </Link>
           );
         })}
       </div>
-      <div className="border-t border-white/30 p-10">
+      <div className='border-t border-white/30 p-10 lg:p-6 xl:p-10'>
         <button
-          type="button"
+          type='button'
           onClick={handleLogout}
-          className="w-full rounded-xl bg-slate-600 px-2 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700"
+          className='w-full rounded-xl bg-slate-600 px-2 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700'
         >
           LOG OUT
         </button>
