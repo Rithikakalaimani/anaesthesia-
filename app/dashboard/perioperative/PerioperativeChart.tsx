@@ -111,7 +111,9 @@ export default function PerioperativeChart({
           acc[m] = points
             .filter((p) => p.metric === m)
             .map((p) => ({ x: p.time, y: p.value }))
-            .sort((a, b) => timeLabels.indexOf(a.x) - timeLabels.indexOf(b.x));
+            .sort(
+              (a, b) => timeLabels.indexOf(a.x) - timeLabels.indexOf(b.x),
+            );
           return acc;
         },
         {} as Record<PlotMetric, { x: string; y: number }[]>,
@@ -199,10 +201,7 @@ export default function PerioperativeChart({
   );
 
   return (
-    <div
-      className={`flex h-full w-full flex-col ${className}`}
-      style={{ minHeight: 200 }}
-    >
+    <div className={`flex h-full w-full flex-col ${className}`} style={{ minHeight: 200 }}>
       <div className='mb-2 flex justify-end print:hidden'>
         <button
           type='button'
@@ -210,7 +209,9 @@ export default function PerioperativeChart({
           data-chart-lines-toggle
           aria-checked={showConnectingLines}
           aria-label={
-            showConnectingLines ? "Connecting lines on" : "Connecting lines off"
+            showConnectingLines
+              ? "Connecting lines on"
+              : "Connecting lines off"
           }
           onClick={() => setShowConnectingLines((v) => !v)}
           className={`relative h-7 w-12 shrink-0 cursor-pointer rounded-full p-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#80A6F0] focus-visible:ring-offset-2 ${
