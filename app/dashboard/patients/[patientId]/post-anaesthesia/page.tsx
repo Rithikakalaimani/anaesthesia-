@@ -12,10 +12,10 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 function loadData(patientId: string) {
   return Promise.all([
     fetch(`${API_BASE}/api/patients/${patientId}`).then((r) =>
-      r.ok ? r.json() : null
+      r.ok ? r.json() : null,
     ),
     fetch(`${API_BASE}/api/patients/${patientId}/post-anaesthesia`).then((r) =>
-      r.ok ? r.json() : null
+      r.ok ? r.json() : null,
     ),
   ]);
 }
@@ -42,9 +42,7 @@ export default function PatientPostAnaesthesiaPage({
         setPostData(paRes ?? null);
         setError(null);
       })
-      .catch((e) =>
-        setError(e instanceof Error ? e.message : "Failed to load")
-      )
+      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"))
       .finally(() => setLoading(false));
   }, [patientId]);
 
@@ -54,7 +52,7 @@ export default function PatientPostAnaesthesiaPage({
 
   const handleSave = async (
     payload: PostAnaesthesiaDTO,
-    submitted: boolean
+    submitted: boolean,
   ) => {
     setSaveStatus("saving");
     try {
@@ -64,7 +62,7 @@ export default function PatientPostAnaesthesiaPage({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -84,15 +82,15 @@ export default function PatientPostAnaesthesiaPage({
 
   if (loading) {
     return (
-      <div className="min-h-full p-6 md:p-8 lg:p-10">
-        <p className="text-slate-500">Loading…</p>
+      <div className='min-h-full p-6 md:p-8 lg:p-10'>
+        <p className='text-slate-500'>Loading…</p>
       </div>
     );
   }
   if (error && !postData) {
     return (
-      <div className="min-h-full p-6 md:p-8 lg:p-10">
-        <p className="text-red-600">{error}</p>
+      <div className='min-h-full p-6 md:p-8 lg:p-10'>
+        <p className='text-red-600'>{error}</p>
       </div>
     );
   }
@@ -100,22 +98,22 @@ export default function PatientPostAnaesthesiaPage({
   const readOnly = !!(postData && postData.submitted);
 
   return (
-    <div className="min-h-full p-6 md:p-8 lg:p-10">
+    <div className='min-h-full p-6 md:p-8 lg:p-10'>
       <PatientStageHeader
         patientId={patientId}
-        currentStage="post-anaesthesia"
+        currentStage='post-anaesthesia'
         patientName={patientName}
       />
       {saveStatus === "saved" && (
-        <p className="mb-4 text-sm font-medium text-green-600">
+        <p className='mb-4 text-sm font-medium text-green-600'>
           Record submitted. Form is now read-only.
         </p>
       )}
       {saveStatus === "draft" && (
-        <p className="mb-4 text-sm font-medium text-slate-600">Draft saved.</p>
+        <p className='mb-4 text-sm font-medium text-slate-600'>Draft saved.</p>
       )}
       {saveStatus === "error" && (
-        <p className="mb-4 text-sm font-medium text-red-600">{error}</p>
+        <p className='mb-4 text-sm font-medium text-red-600'>{error}</p>
       )}
       <PostAnaesthesiaForm
         key={`${postData?.id ?? "new"}-${readOnly}`}
