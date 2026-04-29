@@ -76,7 +76,7 @@ export default function DashboardShell({
               </svg>
             </button>
           </div>
-          <div className='min-h-0 flex-1 overflow-y-auto overflow-x-auto lg:overflow-x-hidden'>
+          <div className='flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-auto lg:overflow-x-hidden'>
             {children}
           </div>
         </main>

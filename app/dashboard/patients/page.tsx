@@ -9,6 +9,8 @@ import {
   type PatientSummary,
 } from "@/lib/infinitePatients";
 
+const SEARCH_DEBOUNCE_MS = 150;
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 function SearchIcon({ className }: { className?: string }) {
@@ -45,25 +47,6 @@ function FilterIcon({ className }: { className?: string }) {
         fill='#464F60'
       />
     </svg>
-  );
-}
-
-function matchesSearch(p: PatientSummary, q: string): boolean {
-  if (!q.trim()) return true;
-  const lower = q.trim().toLowerCase();
-  const name = (p.patientName ?? "").toLowerCase();
-  const id = (p.patientId ?? "").toLowerCase();
-  const stage = (p.currentStage ?? "").toLowerCase();
-  const status = (p.stageStatus ?? "").toLowerCase();
-  const gender = (p.gender ?? "").toLowerCase();
-  const ageStr = p.age != null ? String(p.age) : "";
-  return (
-    name.includes(lower) ||
-    id.includes(lower) ||
-    stage.includes(lower) ||
-    status.includes(lower) ||
-    gender.includes(lower) ||
-    ageStr.includes(lower)
   );
 }
 
@@ -145,6 +128,17 @@ const STAGE_FILTER_GROUPS: {
 ];
 
 export default function PatientsListPage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [listScrollEl, setListScrollEl] = useState<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(t);
+  }, [searchQuery]);
+
   const {
     patients,
     loading,
@@ -152,8 +146,10 @@ export default function PatientsListPage() {
     error,
     hasNext,
     sentinelRef,
-  } = useInfinitePatients();
-  const [searchQuery, setSearchQuery] = useState("");
+  } = useInfinitePatients({
+    search: debouncedSearch,
+    scrollRoot: listScrollEl,
+  });
   const [filterOpen, setFilterOpen] = useState(false);
   const [stageFilters, setStageFilters] = useState<Set<StageFilterId>>(
     () => new Set(),
@@ -192,16 +188,15 @@ export default function PatientsListPage() {
     setFilterOpen(false);
   };
 
-  const filteredPatients = patients.filter(
-    (p) =>
-      matchesSearch(p, searchQuery) && matchesStageFilters(p, stageFilters),
+  const filteredPatients = patients.filter((p) =>
+    matchesStageFilters(p, stageFilters),
   );
 
   const hasActiveSearchOrFilters =
     searchQuery.trim() !== "" || stageFilters.size > 0;
 
   return (
-    <div className='flex min-h-0 flex-col px-4 py-6 sm:px-6 md:px-8 lg:px-10 lg:py-8'>
+    <div className='flex min-h-0 flex-1 flex-col px-4 py-6 sm:px-6 md:px-8 lg:px-10 lg:py-8'>
       <header className='mb-6 flex min-h-[44px] items-center justify-between gap-3'>
         <h1 className='min-w-0 truncate font-raleway text-xl font-bold text-slate-700 md:text-2xl'>
           Patients List
@@ -292,106 +287,117 @@ export default function PatientsListPage() {
       </div>
 
       {error && (
-        <p className='mb-4 text-sm text-red-600'>
+        <p className='mb-4 shrink-0 text-sm text-red-600'>
           {error}. Ensure the backend is running at {API_BASE}.
         </p>
       )}
 
-      <section className='overflow-hidden'>
-        {loading ? (
-          <div className='px-5 py-12 text-center text-slate-500'>Loading…</div>
-        ) : patients.length === 0 ? (
-          <div className='px-5 py-12 text-center text-slate-500'>
-            No patients for the current month.
-          </div>
-        ) : filteredPatients.length === 0 ? (
-          <div className='px-5 py-12 text-center text-slate-500'>
-            No patients match your search or stage filters.
-          </div>
-        ) : (
-          <div className='flex flex-col gap-4'>
-            {filteredPatients.map((p) => (
-              <div
-                key={p.id}
-                className='relative rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md lg:grid lg:grid-cols-[2fr_1fr_1fr_1fr_80px] lg:items-center lg:gap-4 lg:px-5 lg:py-4'
-              >
-                {/* Patient — mobile: top block with room for top-right action */}
-                <div className='flex min-w-0 items-center gap-3 pr-12 lg:col-span-1 lg:pr-0'>
-                  <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600'>
-                    {p.patientName
-                      ? p.patientName.charAt(0).toUpperCase()
-                      : "P"}
-                  </div>
-
-                  <div className='min-w-0 p-1'>
-                    <p className='truncate font-raleway text-base font-semibold text-slate-800'>
-                      {p.patientName ?? "—"}
-                    </p>
-                    <p className='text-sm text-slate-500'>
-                      {p.age != null ? `${p.age} yrs` : ""}
-                      {p.age != null && p.gender ? ", " : ""}
-                      {p.gender ?? ""}
-                    </p>
-                  </div>
+      <section className='flex min-h-0 min-w-0 flex-1 flex-col'>
+        <div
+          ref={setListScrollEl}
+          className='min-h-0 flex-1 overflow-y-auto overscroll-y-contain'
+        >
+          {loading ? (
+            <div className='px-5 py-12 text-center text-slate-500'>Loading…</div>
+          ) : patients.length === 0 ? (
+            <div className='px-5 py-12 text-center text-slate-500'>
+              No patients for the current month.
+            </div>
+          ) : (
+            <>
+              {filteredPatients.length === 0 ? (
+                <div className='px-5 py-12 text-center text-slate-500'>
+                  No patients match your search or stage filters.
                 </div>
+              ) : (
+                <div className='flex flex-col gap-4'>
+                  {filteredPatients.map((p) => (
+                    <div
+                      key={p.id}
+                      className='relative rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md lg:grid lg:grid-cols-[2fr_1fr_1fr_1fr_80px] lg:items-center lg:gap-4 lg:px-5 lg:py-4'
+                    >
+                      {/* Patient — mobile: top block with room for top-right action */}
+                      <div className='flex min-w-0 items-center gap-3 pr-12 lg:col-span-1 lg:pr-0'>
+                        <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600'>
+                          {p.patientName
+                            ? p.patientName.charAt(0).toUpperCase()
+                            : "P"}
+                        </div>
 
-                {/* ID */}
+                        <div className='min-w-0 p-1'>
+                          <p className='truncate font-raleway text-base font-semibold text-slate-800'>
+                            {p.patientName ?? "—"}
+                          </p>
+                          <p className='text-sm text-slate-500'>
+                            {p.age != null ? `${p.age} yrs` : ""}
+                            {p.age != null && p.gender ? ", " : ""}
+                            {p.gender ?? ""}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* ID */}
+                      <div
+                        className='mt-2 text-sm font-sans font-medium lg:mt-0'
+                        style={{ color: "#A0A3A9" }}
+                      >
+                        {p.patientId ?? "—"}
+                      </div>
+
+                      {/* Stage */}
+                      <div className='mt-1 text-sm font-semibold text-slate-700 lg:mt-0'>
+                        {formatStageDisplayLabel(p.currentStage)}
+                      </div>
+
+                      {/* Status */}
+                      <div className='mt-2 lg:mt-0'>
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-0.5 font-raleway text-xs font-semibold ${
+                            p.stageStatus === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : p.stageStatus === "pending"
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-slate-100 text-slate-600"
+                          }`}
+                        >
+                          {p.stageStatus ?? "—"}
+                        </span>
+                      </div>
+
+                      {/* Action — mobile/tablet: top-right; desktop: grid column */}
+                      <div className='absolute right-3 top-3 lg:relative lg:right-auto lg:top-auto lg:flex lg:justify-center'>
+                        <Link
+                          href={`/dashboard/patients/${encodeURIComponent(p.patientId)}`}
+                          className='inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 lg:h-auto lg:w-auto lg:p-2'
+                          aria-label={`View ${p.patientName}`}
+                        >
+                          <PatientViewActionIcon className='h-[26px] w-[26px] min-h-[26px] min-w-[26px] shrink-0 sm:h-7 sm:w-7 sm:min-h-[28px] sm:min-w-[28px]' />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!loading && hasNext ? (
                 <div
-                  className='mt-2 text-sm font-sans font-medium lg:mt-0'
-                  style={{ color: "#A0A3A9" }}
-                >
-                  {p.patientId ?? "—"}
+                  ref={sentinelRef}
+                  className='h-4 w-full shrink-0'
+                  aria-hidden
+                />
+              ) : null}
+              {loadingMore ? (
+                <div className='py-6 text-center text-sm text-slate-500'>
+                  Loading more…
                 </div>
-
-                {/* Stage */}
-                <div className='mt-1 text-sm font-semibold text-slate-700 lg:mt-0'>
-                  {formatStageDisplayLabel(p.currentStage)}
-                </div>
-
-                {/* Status */}
-                <div className='mt-2 lg:mt-0'>
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-0.5 font-raleway text-xs font-semibold ${
-                      p.stageStatus === "completed"
-                        ? "bg-green-100 text-green-800"
-                        : p.stageStatus === "pending"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    {p.stageStatus ?? "—"}
-                  </span>
-                </div>
-
-                {/* Action — mobile/tablet: top-right; desktop: grid column */}
-                <div className='absolute right-3 top-3 lg:relative lg:right-auto lg:top-auto lg:flex lg:justify-center'>
-                  <Link
-                    href={`/dashboard/patients/${encodeURIComponent(p.patientId)}`}
-                    className='inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 lg:h-auto lg:w-auto lg:p-2'
-                    aria-label={`View ${p.patientName}`}
-                  >
-                    <PatientViewActionIcon className='h-[26px] w-[26px] min-h-[26px] min-w-[26px] shrink-0 sm:h-7 sm:w-7 sm:min-h-[28px] sm:min-w-[28px]' />
-                  </Link>
-                </div>
-              </div>
-            ))}
-            <div
-              ref={sentinelRef}
-              className='h-4 w-full shrink-0'
-              aria-hidden
-            />
-            {loadingMore ? (
-              <div className='py-6 text-center text-sm text-slate-500'>
-                Loading more…
-              </div>
-            ) : null}
-            {!loading && !hasNext && patients.length > 0 ? (
-              <p className='py-4 text-center text-xs text-slate-400'>
-                End of list for this month
-              </p>
-            ) : null}
-          </div>
-        )}
+              ) : null}
+              {!loading && !hasNext && patients.length > 0 ? (
+                <p className='py-4 text-center text-xs text-slate-400'>
+                  End of list for this month
+                </p>
+              ) : null}
+            </>
+          )}
+        </div>
       </section>
     </div>
   );

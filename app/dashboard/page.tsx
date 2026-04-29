@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DashboardUserBar from "@/components/DashboardUserBar";
 import {
   PerioperativeSummaryIcon,
@@ -9,6 +10,28 @@ import {
   PreanaestheticSummaryIcon,
 } from "@/components/DailySummaryIcons";
 import PatientViewActionIcon from "@/components/PatientViewActionIcon";
+import type { DashboardOverviewPayload } from "@/components/DashboardOverviewCharts";
+import {
+  readCachedOverview,
+  writeCachedOverview,
+} from "@/lib/dashboardOverviewCache";
+
+const DashboardOverviewCharts = dynamic(
+  () => import("@/components/DashboardOverviewCharts"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className='grid grid-cols-1 gap-4 lg:grid-cols-3' aria-hidden>
+        {[1, 2, 3].map((k) => (
+          <div
+            key={k}
+            className='h-[220px] rounded-xl border border-slate-100 bg-slate-50/80'
+          />
+        ))}
+      </div>
+    ),
+  },
+);
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -118,32 +141,84 @@ export default function DashboardHomePage() {
   const [data, setData] = useState<DailyPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [overview, setOverview] = useState<DashboardOverviewPayload | null>(
+    null,
+  );
+  const [overviewLoading, setOverviewLoading] = useState(true);
+  const [overviewError, setOverviewError] = useState<string | null>(null);
+  const loadSeqRef = useRef(0);
 
-  const load = useCallback(async () => {
+  /** Table + sidebar (daily summary + surgery fitness) — highest priority. */
+  const loadDaily = useCallback(async (seq: number) => {
     setLoading(true);
     setError(null);
+    const dailyUrl = `${API_BASE}/api/dashboard/daily?date=${encodeURIComponent(date)}`;
     try {
-      const res = await fetch(
-        `${API_BASE}/api/dashboard/daily?date=${encodeURIComponent(date)}`,
-      );
-      if (!res.ok) throw new Error(`Failed to load (${res.status})`);
-      const json = (await res.json()) as DailyPayload;
-      setData(json);
+      const dailyRes = await fetch(dailyUrl);
+      if (seq !== loadSeqRef.current) return;
+      if (dailyRes.ok) {
+        setData((await dailyRes.json()) as DailyPayload);
+        setError(null);
+      } else {
+        setData(null);
+        setError(`Failed to load schedule (${dailyRes.status})`);
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      if (seq !== loadSeqRef.current) return;
+      const msg = e instanceof Error ? e.message : "Failed to load";
+      setError(msg);
       setData(null);
     } finally {
-      setLoading(false);
+      if (seq === loadSeqRef.current) setLoading(false);
+    }
+  }, [date]);
+
+  /** Charts — parallel, non-blocking; session cache avoids repeat heavy work. */
+  const loadOverview = useCallback(async (seq: number) => {
+    setOverviewError(null);
+    const cached = readCachedOverview(date);
+    if (cached) {
+      if (seq !== loadSeqRef.current) return;
+      setOverview(cached);
+      setOverviewLoading(false);
+      return;
+    }
+    setOverviewLoading(true);
+    const overviewUrl = `${API_BASE}/api/dashboard/overview?weekOf=${encodeURIComponent(date)}`;
+    try {
+      const overviewRes = await fetch(overviewUrl);
+      if (seq !== loadSeqRef.current) return;
+      if (overviewRes.ok) {
+        const json = (await overviewRes.json()) as DashboardOverviewPayload;
+        setOverview(json);
+        writeCachedOverview(date, json);
+        setOverviewError(null);
+      } else {
+        setOverview(null);
+        setOverviewError(
+          `Could not load overview charts (${overviewRes.status})`,
+        );
+      }
+    } catch {
+      if (seq !== loadSeqRef.current) return;
+      setOverview(null);
+      setOverviewError("Could not load overview charts");
+    } finally {
+      if (seq === loadSeqRef.current) setOverviewLoading(false);
     }
   }, [date]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    const seq = ++loadSeqRef.current;
+    setOverview(null);
+    setOverviewLoading(true);
+    void loadDaily(seq);
+    void loadOverview(seq);
+  }, [date, loadDaily, loadOverview]);
 
   return (
-    <div className='flex min-h-0 flex-col px-4 py-6 sm:px-6 md:px-8 lg:px-10 lg:py-8'>
-      <header className='mb-6 flex min-h-[44px] items-center justify-between gap-3'>
+    <div className='flex min-h-0 flex-1 flex-col px-4 py-6 sm:px-6 md:px-8 lg:px-10 lg:py-8'>
+      <header className='mb-6 flex shrink-0 min-h-[44px] items-center justify-between gap-3'>
         <h1 className='min-w-0 truncate font-raleway text-xl font-bold text-slate-700 md:text-2xl'>
           Home
         </h1>
@@ -151,14 +226,23 @@ export default function DashboardHomePage() {
       </header>
 
       {error && (
-        <p className='mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700'>
+        <p className='mb-4 shrink-0 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700'>
           {error}
         </p>
       )}
 
-      <div className='flex min-h-0 flex-col gap-6 pb-4 lg:flex-row lg:items-start lg:pb-6'>
-        <div className='min-w-0 flex-1'>
-          <div className='w-full max-w-full overflow-x-auto overscroll-x-contain'>
+      <div className='flex min-h-0 flex-1 flex-col gap-6 pb-4 lg:flex-row lg:items-start lg:pb-6'>
+        {/* Charts + table: scroll this pane only; inner stack must not shrink (keeps table below charts like before) */}
+        <div
+          className='min-h-0 min-w-0 w-full flex-1 overflow-y-auto overscroll-y-contain [scrollbar-width:none] [-ms-overflow-style:none] lg:max-h-[calc(100dvh-14rem)] [&::-webkit-scrollbar]:hidden'
+        >
+          <div className='flex shrink-0 flex-col gap-6'>
+            <DashboardOverviewCharts
+              data={overview}
+              loading={overviewLoading}
+              error={overviewError}
+            />
+            <div className='w-full max-w-full shrink-0 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'>
             <div className='min-w-[720px]'>
               {/* HEADER */}
               <div className='grid grid-cols-[100px_2fr_1fr_1.5fr_1fr_80px] border-b border-slate-200 px-3 sm:px-4'>
@@ -256,9 +340,10 @@ export default function DashboardHomePage() {
               </div>
             </div>
           </div>
+          </div>
         </div>
 
-        <aside className='relative w-full shrink-0 lg:max-w-[260px]'>
+        <aside className='relative w-full shrink-0 lg:w-[260px] lg:max-w-[260px] lg:self-start'>
           <div className='absolute bottom-0 left-0 top-0 hidden w-px bg-slate-200 lg:block' />
 
           <div className='space-y-6 pt-2 lg:pt-0 lg:pl-4'>

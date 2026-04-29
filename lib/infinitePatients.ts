@@ -1,6 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -28,6 +33,13 @@ export type PatientPageJson = {
   first: boolean;
 };
 
+export type UseInfinitePatientsOptions = {
+  /** Debounced text search; passed to backend as `q` (name / id / gender). */
+  search?: string;
+  /** Scroll container for infinite scroll (IntersectionObserver `root`). Must be the element that actually scrolls. */
+  scrollRoot?: HTMLElement | null;
+};
+
 function mergeUniqueById(
   prev: PatientSummary[],
   incoming: PatientSummary[],
@@ -43,11 +55,19 @@ function mergeUniqueById(
   return out;
 }
 
+/** When present (reset fetch), use these so the URL `q` matches this search change even if refs lag by a frame. */
+type FetchMeta = {
+  query: string;
+  epoch: number;
+};
+
 /**
- * Paginated patient list for the dashboard: loads first page, then more when the sentinel is visible.
- * Uses IntersectionObserver + a single in-flight guard (no duplicate requests).
+ * Paginated patient list: loads first page, then more when the sentinel intersects the scroll root.
  */
-export function useInfinitePatients() {
+export function useInfinitePatients(opts?: UseInfinitePatientsOptions) {
+  const search = (opts?.search ?? "").trim();
+  const scrollRoot = opts?.scrollRoot ?? null;
+
   const [patients, setPatients] = useState<PatientSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -59,6 +79,14 @@ export function useInfinitePatients() {
   const hasNextRef = useRef(true);
   const loadingRef = useRef(true);
   const loadingMoreRef = useRef(false);
+  const searchRef = useRef(search);
+  const scrollRootRef = useRef(scrollRoot);
+  /** Bumped on each `search` change so stale responses never overwrite list. */
+  const searchEpochRef = useRef(0);
+  const listFetchAbortRef = useRef<AbortController | null>(null);
+
+  // Keep latest search on the ref every render (before effects / IO callbacks) to avoid stale `q` on "load more".
+  searchRef.current = search;
 
   useEffect(() => {
     hasNextRef.current = hasNext;
@@ -69,70 +97,116 @@ export function useInfinitePatients() {
   useEffect(() => {
     loadingMoreRef.current = loadingMore;
   }, [loadingMore]);
+  useEffect(() => {
+    scrollRootRef.current = scrollRoot;
+  }, [scrollRoot]);
 
-  const loadPage = useCallback(async (page: number, reset: boolean) => {
-    if (inFlightRef.current) return;
-    inFlightRef.current = true;
-    if (reset) {
-      setLoading(true);
-      setError(null);
-    } else {
-      setLoadingMore(true);
-    }
-    try {
-      const res = await fetch(
-        `${API_BASE}/api/patients?page=${page}&size=${PATIENT_PAGE_SIZE}`,
-      );
-      if (!res.ok) throw new Error("Failed to load patients");
-      const data: PatientPageJson = await res.json();
-      const content = Array.isArray(data.content) ? data.content : [];
-      setPatients((prev) => (reset ? content : mergeUniqueById(prev, content)));
-      const hn = data.hasNext === true;
-      setHasNext(hn);
-      hasNextRef.current = hn;
-      nextPageRef.current = page + 1;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error loading patients");
-    } finally {
-      inFlightRef.current = false;
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, []);
+  const loadPage = useCallback(
+    async (page: number, reset: boolean, meta?: FetchMeta) => {
+      if (!reset && inFlightRef.current) return;
 
-  const reload = useCallback(() => {
-    nextPageRef.current = 0;
-    setPatients([]);
-    setHasNext(true);
-    hasNextRef.current = true;
-    loadPage(0, true);
-  }, [loadPage]);
+      if (reset) {
+        listFetchAbortRef.current?.abort();
+        listFetchAbortRef.current = new AbortController();
+      }
+
+      inFlightRef.current = true;
+      const requestEpoch = meta?.epoch ?? searchEpochRef.current;
+      const q = (meta?.query ?? searchRef.current).trim();
+      const signal = reset ? listFetchAbortRef.current?.signal : undefined;
+
+      if (reset) {
+        setLoading(true);
+        setError(null);
+      } else {
+        setLoadingMore(true);
+      }
+
+      try {
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+        params.set("size", String(PATIENT_PAGE_SIZE));
+        if (q) params.set("q", q);
+        const res = await fetch(`${API_BASE}/api/patients?${params.toString()}`, {
+          signal,
+        });
+        if (!res.ok) throw new Error("Failed to load patients");
+        const data: PatientPageJson = await res.json();
+        if (searchEpochRef.current !== requestEpoch) {
+          return;
+        }
+        const content = Array.isArray(data.content) ? data.content : [];
+        setPatients((prev) => (reset ? content : mergeUniqueById(prev, content)));
+        const hn = data.hasNext === true;
+        setHasNext(hn);
+        hasNextRef.current = hn;
+        nextPageRef.current = page + 1;
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") {
+          return;
+        }
+        if (searchEpochRef.current !== requestEpoch) {
+          return;
+        }
+        setError(e instanceof Error ? e.message : "Error loading patients");
+      } finally {
+        if (searchEpochRef.current === requestEpoch) {
+          inFlightRef.current = false;
+          setLoading(false);
+          setLoadingMore(false);
+        }
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
+    const epoch = ++searchEpochRef.current;
+    const query = search.trim();
     nextPageRef.current = 0;
     setPatients([]);
     setHasNext(true);
     hasNextRef.current = true;
-    loadPage(0, true);
-  }, [loadPage]);
+    loadPage(0, true, { query, epoch });
+  }, [search, loadPage]);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
+    const root = scrollRootRef.current;
     const obs = new IntersectionObserver(
       (entries) => {
         if (!entries[0]?.isIntersecting) return;
-        if (!hasNextRef.current || loadingRef.current || loadingMoreRef.current)
+        if (
+          !hasNextRef.current ||
+          loadingRef.current ||
+          loadingMoreRef.current
+        ) {
           return;
+        }
         loadPage(nextPageRef.current, false);
       },
-      { root: null, rootMargin: "120px", threshold: 0 },
+      {
+        root: root ?? null,
+        rootMargin: "160px",
+        threshold: 0,
+      },
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [loadPage, patients.length, hasNext]);
+  }, [loadPage, patients.length, hasNext, scrollRoot, loading]);
+
+  const reload = useCallback(() => {
+    const epoch = ++searchEpochRef.current;
+    const query = searchRef.current.trim();
+    nextPageRef.current = 0;
+    setPatients([]);
+    setHasNext(true);
+    hasNextRef.current = true;
+    loadPage(0, true, { query, epoch });
+  }, [loadPage]);
 
   return {
     patients,
@@ -147,18 +221,21 @@ export function useInfinitePatients() {
 
 const FETCH_ALL_CHUNK = 100;
 
-/** Loads every page for the current month (for screens that need the full list, e.g. prescription picker). */
-export async function fetchAllPatientsCurrentMonth(): Promise<
-  PatientSummary[]
-> {
+/** Loads every page for the current month (e.g. prescription picker). */
+export async function fetchAllPatientsCurrentMonth(
+  search?: string,
+): Promise<PatientSummary[]> {
   const merged: PatientSummary[] = [];
   const seen = new Set<string>();
   let page = 0;
   let hasNext = true;
+  const q = (search ?? "").trim();
   while (hasNext) {
-    const res = await fetch(
-      `${API_BASE}/api/patients?page=${page}&size=${FETCH_ALL_CHUNK}`,
-    );
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("size", String(FETCH_ALL_CHUNK));
+    if (q) params.set("q", q);
+    const res = await fetch(`${API_BASE}/api/patients?${params.toString()}`);
     if (!res.ok) throw new Error("Failed to load patients");
     const data: PatientPageJson = await res.json();
     const content = Array.isArray(data.content) ? data.content : [];
